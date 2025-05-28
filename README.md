@@ -2,6 +2,12 @@
 Interactive learning tutorial for NumPy and Pandas with AI explanations
 Interactive NumPy & Pandas Tutor 🐍📊
 An interactive, hands-on learning experience for mastering NumPy and Pandas - two essential Python libraries for data science and numerical computing.
+
+🌐 About This Project
+This interactive NumPy & Pandas tutor was created with the help of Google Gemini AI.
+If you enjoy using it or have ideas for improvement, please contribute!
+I especially encourage the community to add more lessons and interactive exercises to help others learn.
+
 🌟 Features
 
 Interactive Lessons: Learn by doing, not just reading
