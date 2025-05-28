@@ -1,0 +1,1045 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive NumPy & Pandas Tutor with AI Explanations</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .code-block {
+            background-color: #2d3748; /* gray-800 */
+            color: #e2e8f0; /* gray-300 */
+            padding: 0.75rem;
+            border-radius: 0.375rem;
+            margin-top: 0.5rem;
+            margin-bottom: 0.5rem;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.875rem;
+            line-height: 1.25rem;
+            overflow-x: auto;
+            white-space: pre-wrap; /* Ensures newline characters are respected */
+            display: block; /* Ensures the code tag behaves as a block element */
+        }
+        .explanation-content ul {
+            list-style-type: disc;
+            margin-left: 1.5rem;
+        }
+        .explanation-content ol {
+            list-style-type: decimal;
+            margin-left: 1.5rem;
+        }
+        .explanation-content p {
+            margin-bottom: 0.75rem;
+        }
+        .explanation-content strong {
+            font-weight: 600;
+        }
+        .feedback-correct {
+            color: #38a169; /* green-600 */
+            border-left: 4px solid #38a169;
+            padding-left: 0.75rem;
+        }
+        .feedback-incorrect {
+            color: #c53030; /* red-600 */
+            border-left: 4px solid #c53030;
+            padding-left: 0.75rem;
+        }
+        /* Custom scrollbar */
+        textarea::-webkit-scrollbar, pre::-webkit-scrollbar, .lesson-sidebar::-webkit-scrollbar, #ai-explanation-output::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        textarea::-webkit-scrollbar-track, pre::-webkit-scrollbar-track, .lesson-sidebar::-webkit-scrollbar-track, #ai-explanation-output::-webkit-scrollbar-track {
+            background: #edf2f7; /* gray-200 */
+            border-radius: 10px;
+        }
+        textarea::-webkit-scrollbar-thumb, pre::-webkit-scrollbar-thumb, .lesson-sidebar::-webkit-scrollbar-thumb, #ai-explanation-output::-webkit-scrollbar-thumb {
+            background: #a0aec0; /* gray-500 */
+            border-radius: 10px;
+        }
+        textarea::-webkit-scrollbar-thumb:hover, pre::-webkit-scrollbar-thumb:hover, .lesson-sidebar::-webkit-scrollbar-thumb:hover, #ai-explanation-output::-webkit-scrollbar-thumb:hover {
+            background: #718096; /* gray-600 */
+        }
+        .loader {
+            border: 4px solid #f3f3f3; /* Light grey */
+            border-top: 4px solid #3498db; /* Blue */
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-left: 10px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 min-h-screen flex flex-col">
+
+    <header class="bg-slate-800 text-white p-4 shadow-md">
+        <h1 class="text-2xl font-bold text-center">Interactive NumPy & Pandas Tutor</h1>
+    </header>
+
+    <div class="flex-grow flex flex-col md:flex-row container mx-auto p-4 gap-6">
+        <aside class="w-full md:w-1/4 bg-white p-4 rounded-lg shadow-lg lesson-sidebar overflow-y-auto max-h-[calc(100vh-150px)]">
+            <h2 class="text-xl font-semibold mb-3 border-b pb-2">Lessons</h2>
+            <div class="mb-4">
+                <h3 class="text-lg font-semibold text-sky-700 mb-2">NumPy</h3>
+                <ul id="numpy-lessons-list" class="space-y-1"></ul>
+            </div>
+            <div>
+                <h3 class="text-lg font-semibold text-emerald-700 mb-2">Pandas</h3>
+                <ul id="pandas-lessons-list" class="space-y-1"></ul>
+            </div>
+             <div class="mt-6 p-3 bg-blue-50 border border-blue-200 rounded-md text-sm text-blue-700">
+                <p><strong>Note:</strong> Python code is <em>simulated</em> for lesson checking. The "✨ Explain My Code" feature uses a real AI model.</p>
+            </div>
+        </aside>
+
+        <main class="w-full md:w-3/4 bg-white p-6 rounded-lg shadow-lg flex flex-col gap-4 max-h-[calc(100vh-150px)] overflow-y-auto">
+            <div id="lesson-content" class="flex-grow">
+                <h2 id="lesson-title" class="text-2xl font-bold mb-2 text-slate-700">Welcome!</h2>
+                <div id="lesson-explanation" class="explanation-content prose prose-sm sm:prose lg:prose-lg xl:prose-xl max-w-none mb-4">
+                    <p>Select a lesson from the sidebar to get started.</p>
+                    <p>This interactive tutor will guide you through the basics of NumPy and Pandas, two essential Python libraries for data science and numerical computing.</p>
+                </div>
+                <hr class="my-4">
+                <div id="lesson-exercise" class="explanation-content prose prose-sm sm:prose lg:prose-lg xl:prose-xl max-w-none mb-4">
+                    <p class="font-semibold">Your task will appear here.</p>
+                </div>
+            </div>
+
+            <div class="mt-auto">
+                 <div class="mb-4">
+                    <label for="code-editor" class="block text-sm font-medium text-gray-700 mb-1">Your Code (Python):</label>
+                    <textarea id="code-editor" rows="8" class="w-full p-2.5 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 font-mono text-sm bg-gray-50" placeholder="Write your Python code here..."></textarea>
+                </div>
+
+                <div class="flex flex-wrap gap-2 mb-4">
+                    <button id="run-code-btn" class="flex-grow sm:flex-grow-0 bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-md shadow-md transition duration-150 ease-in-out">
+                        Run Code & Check Answer
+                    </button>
+                    <button id="explain-code-btn" class="flex-grow sm:flex-grow-0 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md shadow-md transition duration-150 ease-in-out">
+                        ✨ Explain My Code
+                    </button>
+                    <div id="loading-indicator" class="loader hidden"></div>
+                </div>
+
+
+                <div id="output-area" class="mt-4 p-4 bg-gray-50 border border-gray-200 rounded-md min-h-[80px]">
+                    <h4 class="font-semibold text-gray-700 mb-1">Output / Feedback:</h4>
+                    <pre id="feedback-message" class="text-sm whitespace-pre-wrap"></pre>
+                    <pre id="simulated-output" class="text-sm whitespace-pre-wrap mt-2 code-block hidden"></pre>
+                </div>
+
+                <div id="ai-explanation-area" class="mt-4 p-4 bg-sky-50 border border-sky-200 rounded-md min-h-[80px] hidden">
+                    <h4 class="font-semibold text-sky-700 mb-1">✨ AI Code Explanation:</h4>
+                    <pre id="ai-explanation-output" class="text-sm whitespace-pre-wrap overflow-y-auto max-h-40"></pre>
+                </div>
+
+
+                <div class="mt-6 flex justify-between">
+                    <button id="prev-lesson-btn" class="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-md shadow-md transition duration-150 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed">
+                        &larr; Previous
+                    </button>
+                    <button id="next-lesson-btn" class="bg-sky-600 hover:bg-sky-700 text-white font-semibold py-2 px-4 rounded-md shadow-md transition duration-150 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed">
+                        Next &rarr;
+                    </button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const lessons = [
+            // NumPy Lessons
+            {
+                id: 'numpy_intro',
+                title: 'NumPy: Introduction to Arrays',
+                topic: 'numpy',
+                explanation: `
+                    <p>NumPy is a fundamental package for scientific computing in Python. It provides a powerful N-dimensional array object, which is a grid of values, all of the same type.</p>
+                    <p>To use NumPy, you first need to import it, conventionally as <code>np</code>:</p>
+                    <code class="code-block">import numpy as np</code>
+                    <p>You can create a NumPy array from a Python list:</p>
+                    <code class="code-block">my_list = [1, 2, 3, 4, 5]\nmy_array = np.array(my_list)</code>
+                    <p>Or directly:</p>
+                    <code class="code-block">another_array = np.array([10, 20, 30])</code>
+                    <p>There are also functions to create arrays with initial placeholders:</p>
+                    <ul>
+                        <li><code>np.zeros(shape)</code>: Creates an array filled with zeros. E.g., <code>np.zeros(3)</code> gives <code>[0. 0. 0.]</code>.</li>
+                        <li><code>np.ones(shape)</code>: Creates an array filled with ones. E.g., <code>np.ones((2, 2))</code> gives a 2x2 array of ones.</li>
+                        <li><code>np.arange(start, stop, step)</code>: Like Python's <code>range()</code> but returns an array. E.g., <code>np.arange(0, 10, 2)</code> gives <code>[0 2 4 6 8]</code>.</li>
+                        <li><code>np.linspace(start, stop, num)</code>: Returns <code>num</code> evenly spaced samples, calculated over the interval <code>[start, stop]</code>. E.g., <code>np.linspace(0, 1, 5)</code> gives <code>[0.   0.25 0.5  0.75 1.  ]</code></li>
+                    </ul>
+                `,
+                exercise: `
+                    <p><strong>Your task:</strong></p>
+                    <ol>
+                        <li>Import the NumPy library as <code>np</code>.</li>
+                        <li>Create a NumPy array named <code>arr1</code> containing the integers from 10 to 14 (inclusive).</li>
+                        <li>Create a 1D NumPy array named <code>arr_zeros</code> of 5 zeros.</li>
+                        <li>Create a 1D NumPy array named <code>arr_ones</code> of 3 ones.</li>
+                        <li>Create an array <code>arr_range</code> with values 0, 2, 4, 6, 8 using <code>np.arange()</code>.</li>
+                        <li>(The output will be simulated. Your code should conceptually lead to these arrays being created).</li>
+                    </ol>
+                `,
+                placeholderCode: `import numpy as np\n\n# Create arr1 (integers 10 to 14)\narr1 = np.array([10, 11, 12, 13, 14])\n\n# Create arr_zeros (5 zeros)\narr_zeros = np.zeros(5)\n\n# Create arr_ones (3 ones)\narr_ones = np.ones(3)\n\n# Create arr_range (0, 2, 4, 6, 8)\narr_range = np.arange(0, 9, 2)\n\n# Simulated print (no need to add print statements, the check function will verify creation)\n# print(arr1)\n# print(arr_zeros)\n# print(arr_ones)\n# print(arr_range)`,
+                checkAnswer: function(userCode) {
+                    let feedback = { correct: false, message: "Keep trying!" };
+                    let outputLines = [];
+
+                    const importsCorrect = userCode.includes("import numpy as np");
+                    const arr1Correct = /arr1\s*=\s*np\.array\(\s*\[\s*10\s*,\s*11\s*,\s*12\s*,\s*13\s*,\s*14\s*\]\s*\)/.test(userCode) ||
+                                        /arr1\s*=\s*np\.arange\(\s*10\s*,\s*15\s*\)/.test(userCode);
+                    const arrZerosCorrect = /arr_zeros\s*=\s*np\.zeros\(\s*5\s*\)/.test(userCode);
+                    const arrOnesCorrect = /arr_ones\s*=\s*np\.ones\(\s*3\s*\)/.test(userCode);
+                    const arrRangeCorrect = /arr_range\s*=\s*np\.arange\(\s*0\s*,\s*9\s*,\s*2\s*\)/.test(userCode) || /arr_range\s*=\s*np\.arange\(\s*0\s*,\s*10\s*,\s*2\s*\)/.test(userCode);
+
+
+                    if (importsCorrect && arr1Correct && arrZerosCorrect && arrOnesCorrect && arrRangeCorrect) {
+                        feedback.correct = true;
+                        feedback.message = "Excellent! All arrays created correctly.";
+                        outputLines.push("Simulated state of arrays:");
+                        outputLines.push("arr1: [10 11 12 13 14]");
+                        outputLines.push("arr_zeros: [0. 0. 0. 0. 0.]");
+                        outputLines.push("arr_ones: [1. 1. 1.]");
+                        outputLines.push("arr_range: [0 2 4 6 8]");
+                    } else {
+                        let hints = [];
+                        if (!importsCorrect) hints.push("Ensure NumPy is imported as np.");
+                        if (!arr1Correct) hints.push("Check arr1: should be [10, 11, 12, 13, 14]. Try np.array([...]) or np.arange(...).");
+                        if (!arrZerosCorrect) hints.push("Check arr_zeros: should be 5 zeros. Use np.zeros(...).");
+                        if (!arrOnesCorrect) hints.push("Check arr_ones: should be 3 ones. Use np.ones(...).");
+                        if (!arrRangeCorrect) hints.push("Check arr_range: should be [0, 2, 4, 6, 8]. Use np.arange(start, stop, step).");
+                        feedback.message = "Not quite. " + hints.join(" ");
+                    }
+                    return { ...feedback, output: outputLines.join('\n') };
+                }
+            },
+            {
+                id: 'numpy_attributes_ops',
+                title: 'NumPy: Array Attributes & Basic Operations',
+                topic: 'numpy',
+                explanation: `
+                    <p>NumPy arrays have several useful attributes:</p>
+                    <ul>
+                        <li><code>array.ndim</code>: Number of dimensions (axes).</li>
+                        <li><code>array.shape</code>: Tuple of integers indicating the size of the array in each dimension.</li>
+                        <li><code>array.size</code>: Total number of elements in the array.</li>
+                        <li><code>array.dtype</code>: An object describing the type of the elements in the array.</li>
+                    </ul>
+                    <code class="code-block">import numpy as np\na = np.array([[1, 2, 3], [4, 5, 6]]) # a 2x3 array\n# Attributes (conceptual output):\n# a.ndim  -> 2\n# a.shape -> (2, 3)\n# a.size  -> 6\n# a.dtype -> dtype('int64') (can vary)</code>
+                    <p>Basic arithmetic operations (addition, subtraction, multiplication, division) on NumPy arrays are element-wise.</p>
+                    <code class="code-block">b = np.array([10, 20, 30])\nc = np.array([1, 2, 3])\n# Operations (conceptual output):\n# b + c    -> [11 22 33]\n# b * 2    -> [20 40 60]\n# b + 100  -> [110 120 130] (scalar broadcasting)</code>
+                    <p><strong>Broadcasting</strong> describes how NumPy treats arrays with different shapes during arithmetic operations. Subject to certain constraints, the smaller array is “broadcast” across the larger array so that they have compatible shapes.</p>
+                `,
+                exercise: `
+                    <p><strong>Your task:</strong></p>
+                    <ol>
+                        <li>Create a 2D NumPy array named <code>matrix_a</code> with 2 rows and 3 columns, containing numbers from 1 to 6. (e.g. <code>[[1,2,3], [4,5,6]]</code>)</li>
+                        <li>Create another 1D array <code>vector_b</code> with values <code>[10, 20, 30]</code>.</li>
+                        <li>Add <code>vector_b</code> to <code>matrix_a</code>. Store the result in <code>result_matrix</code>. (NumPy will broadcast <code>vector_b</code> across the rows of <code>matrix_a</code>).</li>
+                        <li>Create a scalar <code>multiplier = 5</code>. Multiply <code>result_matrix</code> by <code>multiplier</code> and store it in <code>final_result</code>.</li>
+                    </ol>
+                `,
+                placeholderCode: `import numpy as np\n\n# Create matrix_a (2x3, values 1-6)\nmatrix_a = np.array([[1,2,3],[4,5,6]])\n\n# Create vector_b ([10, 20, 30])\nvector_b = np.array([10,20,30])\n\n# Add vector_b to matrix_a (broadcasting)\nresult_matrix = matrix_a + vector_b\n\n# Create multiplier\nmultiplier = 5\n\n# Multiply result_matrix by multiplier\nfinal_result = result_matrix * multiplier\n\n# Simulated print (verify creation)\n# print(result_matrix)\n# print(final_result)`,
+                checkAnswer: function(userCode) {
+                    let feedback = { correct: false, message: "Keep trying!" };
+                    let outputLines = [];
+
+                    const matrixCorrect = /matrix_a\s*=\s*np\.array\(\s*\[\s*\[\s*1\s*,\s*2\s*,\s*3\s*\]\s*,\s*\[\s*4\s*,\s*5\s*,\s*6\s*\]\s*\]\s*\)/.test(userCode) ||
+                                          /matrix_a\s*=\s*np\.arange\(\s*1\s*,\s*7\s*\)\.reshape\(\s*\(?\s*2\s*,\s*3\s*\)?\s*\)/.test(userCode);
+                    const vectorCorrect = /vector_b\s*=\s*np\.array\(\s*\[\s*10\s*,\s*20\s*,\s*30\s*\]\s*\)/.test(userCode);
+                    const additionCorrect = /result_matrix\s*=\s*matrix_a\s*\+\s*vector_b/.test(userCode);
+                    const multiplierCorrect = /multiplier\s*=\s*5/.test(userCode);
+                    const multiplicationCorrect = /final_result\s*=\s*result_matrix\s*\*\s*multiplier/.test(userCode);
+
+
+                    if (matrixCorrect && vectorCorrect && additionCorrect && multiplierCorrect && multiplicationCorrect) {
+                        feedback.correct = true;
+                        feedback.message = "Great job! Broadcasting and element-wise operations are correct.";
+                        outputLines.push("Simulated state of arrays:");
+                        outputLines.push("result_matrix: [[11 22 33]\n                [14 25 36]]");
+                        outputLines.push("final_result:  [[ 55 110 165]\n                [ 70 125 180]]");
+                    } else {
+                        let hints = [];
+                        if (!matrixCorrect) hints.push("Check 'matrix_a' (2x3 array, values 1-6).");
+                        if (!vectorCorrect) hints.push("Ensure 'vector_b' is [10, 20, 30].");
+                        if (!additionCorrect) hints.push("Addition should be 'matrix_a + vector_b' into 'result_matrix'.");
+                        if (!multiplierCorrect) hints.push("Define 'multiplier' as 5.");
+                        if (!multiplicationCorrect) hints.push("Multiply 'result_matrix' by 'multiplier' into 'final_result'.");
+                        feedback.message = "Almost! " + hints.join(" ");
+                    }
+                    return { ...feedback, output: outputLines.join('\n') };
+                }
+            },
+            {
+                id: 'numpy_indexing_slicing',
+                title: 'NumPy: Indexing & Slicing',
+                topic: 'numpy',
+                explanation: `
+                    <p>NumPy offers powerful ways to access and modify array elements through indexing and slicing.</p>
+                    <p><strong>Basic Indexing:</strong> Access individual elements using zero-based indices.</p>
+                    <code class="code-block">import numpy as np\narr = np.arange(10, 15)  # arr is [10 11 12 13 14]\n# Accessing elements:\n# arr[0] -> 10\n# arr[2] -> 12\n# arr[-1] -> 14 (last element)</code>
+                    <p>For multi-dimensional arrays, use a tuple of indices:</p>
+                    <code class="code-block">matrix = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]])\n# matrix[1, 2] -> 6 (element at row 1, column 2)\n# matrix[0]    -> [1 2 3] (first row)</code>
+                    <p><strong>Slicing:</strong> Extract subarrays using the slice notation <code>start:stop:step</code>.</p>
+                    <code class="code-block">arr = np.arange(0, 10) # arr is [0 1 2 3 4 5 6 7 8 9]\n# Slicing examples:\n# arr[2:5]    -> [2 3 4] (elements from index 2 up to, but not including, 5)\n# arr[:3]     -> [0 1 2] (elements from the beginning up to index 3)\n# arr[5:]     -> [5 6 7 8 9] (elements from index 5 to the end)\n# arr[::2]    -> [0 2 4 6 8] (every other element)\n# arr[::-1]   -> [9 8 7 6 5 4 3 2 1] (reversed array)</code>
+                    <p>Slicing creates a <em>view</em> of the original array, not a copy. Modifying a slice will modify the original array.</p>
+                `,
+                exercise: `
+                    <p><strong>Your task:</strong></p>
+                    <ol>
+                        <li>Create a NumPy array named <code>my_data</code> containing integers from 20 to 29 (inclusive).</li>
+                        <li>Extract the element at index 3 and store it in <code>element_at_3</code>.</li>
+                        <li>Extract a slice containing elements from index 2 up to (but not including) index 6. Store it in <code>slice_2_to_5</code>.</li>
+                        <li>Extract the last 3 elements of <code>my_data</code> and store them in <code>last_three</code>.</li>
+                        <li>Create a 2D array <code>matrix_data</code>: <code>[[10,20,30],[40,50,60],[70,80,90]]</code>.</li>
+                        <li>Extract the element at row 1, column 1 (which is 50) and store it in <code>matrix_element</code>.</li>
+                        <li>Extract the second row of <code>matrix_data</code> and store it in <code>second_row</code>.</li>
+                    </ol>
+                `,
+                placeholderCode: `import numpy as np\n\n# Create my_data (integers 20 to 29)\nmy_data = np.arange(20, 30)\n\n# Extract element at index 3\nelement_at_3 = my_data[3]\n\n# Extract slice from index 2 to 5 (exclusive of 6)\nslice_2_to_5 = my_data[2:6]\n\n# Extract last 3 elements\nlast_three = my_data[-3:]\n\n# Create matrix_data\nmatrix_data = np.array([[10,20,30],[40,50,60],[70,80,90]])\n\n# Extract element at row 1, col 1\nmatrix_element = matrix_data[1,1]\n\n# Extract second row\nsecond_row = matrix_data[1]\n\n# Simulated print\n# print(element_at_3)\n# print(slice_2_to_5)\n# print(last_three)\n# print(matrix_element)\n# print(second_row)`,
+                checkAnswer: function(userCode) {
+                    let feedback = { correct: false, message: "Keep working!" };
+                    let outputLines = [];
+
+                    const myDataCorrect = /my_data\s*=\s*np\.arange\(\s*20\s*,\s*30\s*\)/.test(userCode);
+                    const elem3Correct = /element_at_3\s*=\s*my_data\s*\[\s*3\s*\]/.test(userCode);
+                    const sliceCorrect = /slice_2_to_5\s*=\s*my_data\s*\[\s*2\s*:\s*6\s*\]/.test(userCode);
+                    const lastThreeCorrect = /last_three\s*=\s*my_data\s*\[\s*-3\s*:\s*\]/.test(userCode) || /last_three\s*=\s*my_data\s*\[\s*7\s*:\s*\]/.test(userCode) || /last_three\s*=\s*my_data\s*\[\s*len\(\s*my_data\s*\)\s*-\s*3\s*:\s*\]/.test(userCode);
+                    const matrixDataCorrect = /matrix_data\s*=\s*np\.array\(\s*\[\s*\[\s*10\s*,\s*20\s*,\s*30\s*\]\s*,\s*\[\s*40\s*,\s*50\s*,\s*60\s*\]\s*,\s*\[\s*70\s*,\s*80\s*,\s*90\s*\]\s*\]\s*\)/.test(userCode.replace(/\s+/g, ''));
+                    const matrixElemCorrect = /matrix_element\s*=\s*matrix_data\s*\[\s*1\s*,\s*1\s*\]/.test(userCode);
+                    const secondRowCorrect = /second_row\s*=\s*matrix_data\s*\[\s*1\s*\]/.test(userCode) || /second_row\s*=\s*matrix_data\s*\[\s*1\s*,\s*:\s*\]/.test(userCode);
+
+
+                    if (myDataCorrect && elem3Correct && sliceCorrect && lastThreeCorrect && matrixDataCorrect && matrixElemCorrect && secondRowCorrect) {
+                        feedback.correct = true;
+                        feedback.message = "Excellent! Indexing and slicing performed correctly.";
+                        outputLines.push("Simulated values:");
+                        outputLines.push("my_data: [20 21 22 23 24 25 26 27 28 29]");
+                        outputLines.push("element_at_3: 23");
+                        outputLines.push("slice_2_to_5: [22 23 24 25]");
+                        outputLines.push("last_three: [27 28 29]");
+                        outputLines.push("matrix_data:\n[[10 20 30]\n [40 50 60]\n [70 80 90]]");
+                        outputLines.push("matrix_element: 50");
+                        outputLines.push("second_row: [40 50 60]");
+                    } else {
+                        let hints = [];
+                        if (!myDataCorrect) hints.push("Check 'my_data' creation (arange 20 to 30).");
+                        if (!elem3Correct) hints.push("Check 'element_at_3' (my_data[3]).");
+                        if (!sliceCorrect) hints.push("Check 'slice_2_to_5' (my_data[2:6]).");
+                        if (!lastThreeCorrect) hints.push("Check 'last_three' (my_data[-3:] or my_data[7:]).");
+                        if (!matrixDataCorrect) hints.push("Check 'matrix_data' definition.");
+                        if (!matrixElemCorrect) hints.push("Check 'matrix_element' (matrix_data[1,1]).");
+                        if (!secondRowCorrect) hints.push("Check 'second_row' (matrix_data[1] or matrix_data[1,:]).");
+                        feedback.message = "Not quite right. " + hints.join(" ");
+                    }
+                    return { ...feedback, output: outputLines.join('\n') };
+                }
+            },
+            {
+                id: 'numpy_boolean_ufuncs',
+                title: 'NumPy: Boolean Indexing & Ufuncs',
+                topic: 'numpy',
+                explanation: `
+                    <p><strong>Boolean Indexing:</strong> You can use an array of boolean values to select elements from another array. This is extremely powerful for conditional selection.</p>
+                    <code class="code-block">import numpy as np\narr = np.array([1, 5, 2, 7, 3, 8, 4, 6])\n# Condition: elements greater than 4\ncondition = arr > 4  # This creates a boolean array: [False  True False  True False  True False  True]\n# Select elements based on condition\nselected_elements = arr[condition] # Output: [5 7 8 6]</code>
+                    <p>You can combine multiple conditions using logical operators <code>&</code> (AND) and <code>|</code> (OR). Remember to use parentheses for each condition due to operator precedence.</p>
+                    <code class="code-block"># Condition: elements greater than 2 AND less than 7\ncombined_condition = (arr > 2) & (arr < 7) # [False  True False False  True  True  True  True]\nselected_combined = arr[combined_condition] # Output: [5 3 8 4 6] (Error in example, should be [5 3 4 6]) -> Corrected: [5 3 4 6]</code>
+                    <p><strong>Universal Functions (ufuncs):</strong> NumPy provides many ufuncs, which are functions that operate element-wise on ndarrays. Examples include <code>np.sqrt()</code>, <code>np.exp()</code>, <code>np.sin()</code>, <code>np.add()</code>, etc.</p>
+                    <code class="code-block">data = np.array([1, 4, 9, 16])\nsquare_roots = np.sqrt(data) # Output: [1. 2. 3. 4.]\n\nangles = np.array([0, np.pi/2, np.pi])\nsines = np.sin(angles) # Output: [0.0000000e+00 1.0000000e+00 1.2246468e-16] (approx. [0. 1. 0.])</code>
+                `,
+                exercise: `
+                    <p><strong>Your task:</strong></p>
+                    <ol>
+                        <li>Create a NumPy array named <code>numbers</code> with values from 0 to 9 (<code>np.arange(10)</code>).</li>
+                        <li>Using boolean indexing, select all even numbers from <code>numbers</code> and store them in <code>even_numbers</code>. (Hint: <code>x % 2 == 0</code> checks for even).</li>
+                        <li>Using boolean indexing, select all numbers greater than 3 AND less than or equal to 7 from <code>numbers</code>. Store them in <code>selected_range</code>.</li>
+                        <li>Calculate the square root of all elements in <code>numbers</code> using a ufunc and store the result in <code>sqrt_numbers</code>.</li>
+                    </ol>
+                `,
+                placeholderCode: `import numpy as np\n\n# Create numbers array\nnumbers = np.arange(10)\n\n# Select even numbers\n\n\n# Select numbers > 3 AND <= 7\n\n\n# Calculate square roots\n\n\n# Simulated print\n# print("Even numbers:", even_numbers)\n# print("Selected range:", selected_range)\n# print("Square roots:", sqrt_numbers)`,
+                checkAnswer: function(userCode) {
+                    let feedback = { correct: false, message: "Keep trying!" };
+                    let outputLines = [];
+                    const numbersCorrect = /numbers\s*=\s*np\.arange\(\s*10\s*\)/.test(userCode);
+                    const evenCorrect = /even_numbers\s*=\s*numbers\s*\[\s*numbers\s*%\s*2\s*==\s*0\s*\]/.test(userCode);
+                    const rangeCorrect = /selected_range\s*=\s*numbers\s*\[\s*\(\s*numbers\s*>\s*3\s*\)\s*&\s*\(\s*numbers\s*<=\s*7\s*\)\s*\]/.test(userCode);
+                    const sqrtCorrect = /sqrt_numbers\s*=\s*np\.sqrt\(\s*numbers\s*\)/.test(userCode);
+
+                    if (numbersCorrect && evenCorrect && rangeCorrect && sqrtCorrect) {
+                        feedback.correct = true;
+                        feedback.message = "Great! Boolean indexing and ufuncs used correctly.";
+                        outputLines.push("Simulated values:");
+                        outputLines.push("numbers: [0 1 2 3 4 5 6 7 8 9]");
+                        outputLines.push("even_numbers: [0 2 4 6 8]");
+                        outputLines.push("selected_range: [4 5 6 7]");
+                        outputLines.push("sqrt_numbers: [0.        1.        1.41421356 1.73205081 2.        2.23606798\n 2.44948974 2.64575131 2.82842712 3.        ]");
+                    } else {
+                        let hints = [];
+                        if (!numbersCorrect) hints.push("Ensure 'numbers' is np.arange(10).");
+                        if (!evenCorrect) hints.push("For 'even_numbers', use boolean indexing: numbers[numbers % 2 == 0].");
+                        if (!rangeCorrect) hints.push("For 'selected_range', use combined conditions: numbers[(numbers > 3) & (numbers <= 7)].");
+                        if (!sqrtCorrect) hints.push("For 'sqrt_numbers', use np.sqrt(numbers).");
+                        feedback.message = "Not quite. " + hints.join(" ");
+                    }
+                    return { ...feedback, output: outputLines.join('\n') };
+                }
+            },
+            {
+                id: 'numpy_aggregations',
+                title: 'NumPy: Aggregations',
+                topic: 'numpy',
+                explanation: `
+                    <p>NumPy provides efficient functions for performing aggregations on arrays, such as finding the sum, mean, min, max, etc.</p>
+                    <code class="code-block">import numpy as np\narr = np.array([1, 2, 3, 4, 5, 6])\n\n# Sum of all elements\n# arr.sum()  -> 21\n# np.sum(arr) -> 21\n\n# Minimum and Maximum\n# arr.min()  -> 1\n# arr.max()  -> 6\n\n# Mean and Standard Deviation\n# arr.mean() -> 3.5\n# arr.std()  -> 1.707825127659933 (approx)</code>
+                    <p>For multi-dimensional arrays, you can specify the axis along which to aggregate:</p>
+                    <code class="code-block">matrix = np.array([[1, 2, 3], [4, 5, 6]])\n# matrix is:\n# [[1 2 3]\n#  [4 5 6]]\n\n# Sum along columns (axis=0)\n# matrix.sum(axis=0) -> [5 7 9]\n\n# Sum along rows (axis=1)\n# matrix.sum(axis=1) -> [ 6 15]</code>
+                `,
+                exercise: `
+                    <p><strong>Your task:</strong></p>
+                    <ol>
+                        <li>Create a NumPy array named <code>data_points</code> with values <code>[10, 15, 5, 25, 20, 30]</code>.</li>
+                        <li>Calculate the sum of all elements in <code>data_points</code> and store it in <code>total_sum</code>.</li>
+                        <li>Find the minimum value in <code>data_points</code> and store it in <code>min_val</code>.</li>
+                        <li>Find the maximum value in <code>data_points</code> and store it in <code>max_val</code>.</li>
+                        <li>Calculate the mean (average) of <code>data_points</code> and store it in <code>mean_val</code>.</li>
+                        <li>Create a 2D array <code>matrix_b = np.array([[10, 20], [30, 5], [15, 25]])</code>.</li>
+                        <li>Calculate the sum of <code>matrix_b</code> along axis 0 (columns) and store it in <code>col_sums</code>.</li>
+                        <li>Calculate the mean of <code>matrix_b</code> along axis 1 (rows) and store it in <code>row_means</code>.</li>
+                    </ol>
+                `,
+                placeholderCode: `import numpy as np\n\n# Create data_points array\ndata_points = np.array([10, 15, 5, 25, 20, 30])\n\n# Calculate sum\n\n\n# Find minimum\n\n\n# Find maximum\n\n\n# Calculate mean\n\n\n# Create matrix_b\nmatrix_b = np.array([[10, 20], [30, 5], [15, 25]])\n\n# Sum along axis 0 (columns)\n\n\n# Mean along axis 1 (rows)\n\n\n# Simulated print\n# print("Total sum:", total_sum)\n# print("Min value:", min_val)\n# print("Max value:", max_val)\n# print("Mean value:", mean_val)\n# print("Column sums:", col_sums)\n# print("Row means:", row_means)`,
+                checkAnswer: function(userCode) {
+                    let feedback = { correct: false, message: "Keep going!" };
+                    let outputLines = [];
+                    const dataPointsCorrect = /data_points\s*=\s*np\.array\(\s*\[\s*10\s*,\s*15\s*,\s*5\s*,\s*25\s*,\s*20\s*,\s*30\s*\]\s*\)/.test(userCode);
+                    const sumCorrect = /total_sum\s*=\s*(data_points\.sum\(\)|np\.sum\(\s*data_points\s*\))/.test(userCode);
+                    const minCorrect = /min_val\s*=\s*(data_points\.min\(\)|np\.min\(\s*data_points\s*\))/.test(userCode);
+                    const maxCorrect = /max_val\s*=\s*(data_points\.max\(\)|np\.max\(\s*data_points\s*\))/.test(userCode);
+                    const meanCorrect = /mean_val\s*=\s*(data_points\.mean\(\)|np\.mean\(\s*data_points\s*\))/.test(userCode);
+                    const matrixBCorrect = /matrix_b\s*=\s*np\.array\(\s*\[\s*\[\s*10\s*,\s*20\s*\]\s*,\s*\[\s*30\s*,\s*5\s*\]\s*,\s*\[\s*15\s*,\s*25\s*\]\s*\]\s*\)/.test(userCode.replace(/\s+/g, ''));
+                    const colSumsCorrect = /col_sums\s*=\s*(matrix_b\.sum\(\s*axis\s*=\s*0\s*\)|np\.sum\(\s*matrix_b\s*,\s*axis\s*=\s*0\s*\))/.test(userCode);
+                    const rowMeansCorrect = /row_means\s*=\s*(matrix_b\.mean\(\s*axis\s*=\s*1\s*\)|np\.mean\(\s*matrix_b\s*,\s*axis\s*=\s*1\s*\))/.test(userCode);
+
+
+                    if (dataPointsCorrect && sumCorrect && minCorrect && maxCorrect && meanCorrect && matrixBCorrect && colSumsCorrect && rowMeansCorrect) {
+                        feedback.correct = true;
+                        feedback.message = "Excellent! Aggregations performed correctly.";
+                        outputLines.push("Simulated values:");
+                        outputLines.push("data_points: [10 15  5 25 20 30]");
+                        outputLines.push("total_sum: 105");
+                        outputLines.push("min_val: 5");
+                        outputLines.push("max_val: 30");
+                        outputLines.push("mean_val: 17.5");
+                        outputLines.push("matrix_b:\n[[10 20]\n [30  5]\n [15 25]]");
+                        outputLines.push("col_sums: [55 50]");
+                        outputLines.push("row_means: [15.  17.5 20. ]");
+                    } else {
+                        let hints = [];
+                        if (!dataPointsCorrect) hints.push("Check 'data_points' array.");
+                        if (!sumCorrect) hints.push("Check 'total_sum' (e.g., data_points.sum()).");
+                        if (!minCorrect) hints.push("Check 'min_val' (e.g., data_points.min()).");
+                        if (!maxCorrect) hints.push("Check 'max_val' (e.g., data_points.max()).");
+                        if (!meanCorrect) hints.push("Check 'mean_val' (e.g., data_points.mean()).");
+                        if (!matrixBCorrect) hints.push("Check 'matrix_b' definition.");
+                        if (!colSumsCorrect) hints.push("Check 'col_sums' (e.g., matrix_b.sum(axis=0)).");
+                        if (!rowMeansCorrect) hints.push("Check 'row_means' (e.g., matrix_b.mean(axis=1)).");
+                        feedback.message = "Some calculations are off. " + hints.join(" ");
+                    }
+                    return { ...feedback, output: outputLines.join('\n') };
+                }
+            },
+            // Pandas Lessons
+            {
+                id: 'pandas_series_intro',
+                title: 'Pandas: Introduction to Series',
+                topic: 'pandas',
+                explanation: `
+                    <p>Pandas is a powerful library for data manipulation and analysis. It introduces two main data structures: <strong>Series</strong> and <strong>DataFrame</strong>.</p>
+                    <p>A <strong>Series</strong> is a one-dimensional labeled array capable of holding any data type (integers, strings, floating point numbers, Python objects, etc.). The axis labels are collectively referred to as the <strong>index</strong>.</p>
+                    <p>To use Pandas, import it, conventionally as <code>pd</code>:</p>
+                    <code class="code-block">import pandas as pd</code>
+                    <p>Creating a Series from a Python list:</p>
+                    <code class="code-block">data = [10, 20, 30, 40, 50]\ns = pd.Series(data)</code>
+                    <p>Conceptual output of <code>print(s)</code>:</p>
+                    <code class="code-block">0    10\n1    20\n2    30\n3    40\n4    50\ndtype: int64</code>
+                    <p>You can specify custom index labels:</p>
+                    <code class="code-block">s_custom_index = pd.Series(data, index=['a', 'b', 'c', 'd', 'e'])</code>
+                    <p>Conceptual output of <code>print(s_custom_index)</code>:</p>
+                    <code class="code-block">a    10\nb    20\nc    30\nd    40\ne    50\ndtype: int64</code>
+                `,
+                exercise: `
+                    <p><strong>Your task:</strong></p>
+                    <ol>
+                        <li>Import the Pandas library as <code>pd</code>.</li>
+                        <li>Create a list of scores: <code>[90, 85, 92, 78]</code>.</li>
+                        <li>Create a list of subjects (to be used as index): <code>['Math', 'Science', 'English', 'History']</code>.</li>
+                        <li>Create a Pandas Series named <code>student_scores</code> using the scores as data and subjects as the index.</li>
+                    </ol>
+                `,
+                placeholderCode: `import pandas as pd\n\n# Scores and Subjects\nscores_data = [90, 85, 92, 78]\nsubjects_index = ['Math', 'Science', 'English', 'History']\n\n# Create the Series student_scores\nstudent_scores = pd.Series(scores_data, index=subjects_index)\n\n# Simulated print (verify creation)\n# print(student_scores)`,
+                checkAnswer: function(userCode) {
+                    let feedback = { correct: false, message: "Try again!" };
+                    let outputLines = [];
+
+                    const importsCorrect = userCode.includes("import pandas as pd");
+                    const seriesDataCorrect = userCode.includes("scores_data = [90, 85, 92, 78]") || userCode.includes("scores_data = [90,85,92,78]");
+                    const seriesIndexCorrect = userCode.includes("subjects_index = ['Math', 'Science', 'English', 'History']") || userCode.includes("subjects_index = ['Math','Science','English','History']");
+                    const seriesCreationPattern = /student_scores\s*=\s*pd\.Series\(\s*(scores_data|\[\s*90\s*,\s*85\s*,\s*92\s*,\s*78\s*\])\s*,\s*index\s*=\s*(subjects_index|\['Math'\s*,\s*'Science'\s*,\s*'English'\s*,\s*'History'\])\s*\)/;
+                    const seriesCorrect = seriesCreationPattern.test(userCode.replace(/\s+/g, ' '));
+
+                    if (importsCorrect && seriesDataCorrect && seriesIndexCorrect && seriesCorrect) {
+                        feedback.correct = true;
+                        feedback.message = "Correct! You've created the Pandas Series.";
+                        outputLines.push("Simulated Series 'student_scores':");
+                        outputLines.push("Math       90");
+                        outputLines.push("Science    85");
+                        outputLines.push("English    92");
+                        outputLines.push("History    78");
+                        outputLines.push("dtype: int64");
+                    } else {
+                        let hints = [];
+                        if (!importsCorrect) hints.push("Don't forget to import pandas as pd.");
+                        if (!seriesDataCorrect) hints.push("Ensure 'scores_data' list is correct: [90, 85, 92, 78].");
+                        if (!seriesIndexCorrect) hints.push("Ensure 'subjects_index' list is correct: ['Math', 'Science', 'English', 'History'].");
+                        if (!seriesCorrect) hints.push("Check the Series creation: student_scores = pd.Series(scores_data, index=subjects_index).");
+                        feedback.message = "Not quite. " + hints.join(" ");
+                    }
+                    return { ...feedback, output: outputLines.join('\n') };
+                }
+            },
+            {
+                id: 'pandas_dataframe_intro',
+                title: 'Pandas: Introduction to DataFrames',
+                topic: 'pandas',
+                explanation: `
+                    <p>A <strong>DataFrame</strong> is a 2-dimensional labeled data structure with columns of potentially different types. You can think of it like a spreadsheet, a SQL table, or a dictionary of Series objects. It is the most commonly used Pandas object.</p>
+                    <p>Creating a DataFrame from a dictionary of lists (where keys are column names and values are lists of column data):</p>
+                    <code class="code-block">import pandas as pd\ndata = {\n    'Name': ['Alice', 'Bob', 'Charlie'],\n    'Age': [25, 30, 22],\n    'City': ['New York', 'Paris', 'London']\n}\ndf = pd.DataFrame(data)</code>
+                    <p>Conceptual output of <code>print(df)</code>:</p>
+                    <code class="code-block">      Name  Age      City\n0    Alice   25  New York\n1      Bob   30     Paris\n2  Charlie   22    London</code>
+                    <p>Common attributes/methods to inspect DataFrames:</p>
+                    <ul>
+                        <li><code>df.head(n)</code>: Returns the first n rows (default 5).</li>
+                        <li><code>df.tail(n)</code>: Returns the last n rows (default 5).</li>
+                        <li><code>df.info()</code>: Provides a concise summary of the DataFrame.</li>
+                        <li><code>df.describe()</code>: Generates descriptive statistics.</li>
+                        <li><code>df.shape</code>: Returns a tuple (rows, columns).</li>
+                        <li><code>df.columns</code>: Returns the column labels.</li>
+                        <li><code>df.index</code>: Returns the index (row labels).</li>
+                    </ul>
+                `,
+                exercise: `
+                    <p><strong>Your task:</strong></p>
+                    <ol>
+                        <li>Import Pandas as <code>pd</code>.</li>
+                        <li>Create a dictionary named <code>product_data</code> with the following data:
+                            <ul>
+                                <li>'Product Name': ['Laptop', 'Mouse', 'Keyboard', 'Monitor']</li>
+                                <li>'Unit Price': [1200, 25, 75, 300]</li>
+                                <li>'Units In Stock': [10, 150, 60, 25]</li>
+                            </ul>
+                        </li>
+                        <li>Create a Pandas DataFrame named <code>inventory_df</code> from this dictionary.</li>
+                    </ol>
+                `,
+                placeholderCode: `import pandas as pd\n\n# Product data dictionary\nproduct_data = {\n    'Product Name': ['Laptop', 'Mouse', 'Keyboard', 'Monitor'],\n    'Unit Price': [1200, 25, 75, 300],\n    'Units In Stock': [10, 150, 60, 25]\n}\n\n# Create DataFrame inventory_df\ninventory_df = pd.DataFrame(product_data)\n\n# Simulated print (verify creation)\n# print(inventory_df)`,
+                checkAnswer: function(userCode) {
+                    let feedback = { correct: false, message: "Keep working on it!" };
+                    let outputLines = [];
+
+                    const importsCorrect = userCode.includes("import pandas as pd");
+                    const dictPattern = /product_data\s*=\s*\{\s*['"]Product Name['"]\s*:\s*\[\s*['"]Laptop['"]\s*,\s*['"]Mouse['"]\s*,\s*['"]Keyboard['"]\s*,\s*['"]Monitor['"]\s*\]\s*,\s*['"]Unit Price['"]\s*:\s*\[\s*1200\s*,\s*25\s*,\s*75\s*,\s*300\s*\]\s*,\s*['"]Units In Stock['"]\s*:\s*\[\s*10\s*,\s*150\s*,\s*60\s*,\s*25\s*\]\s*\}/s;
+                    const dfPattern = /inventory_df\s*=\s*pd\.DataFrame\(\s*product_data\s*\)/;
+
+                    // Normalize quotes for dictionary check
+                    const normalizedUserCodeForDict = userCode.replace(/'/g, '"');
+                    const dictCorrect = dictPattern.test(normalizedUserCodeForDict.replace(/\s+/g, ' '));
+                    const dfCorrect = dfPattern.test(userCode.replace(/\s+/g, ' '));
+
+                    if (importsCorrect && dictCorrect && dfCorrect) {
+                        feedback.correct = true;
+                        feedback.message = "Excellent! DataFrame 'inventory_df' created correctly.";
+                        outputLines.push("Simulated DataFrame 'inventory_df':");
+                        outputLines.push("  Product Name  Unit Price  Units In Stock");
+                        outputLines.push("0       Laptop        1200              10");
+                        outputLines.push("1        Mouse          25             150");
+                        outputLines.push("2     Keyboard          75              60");
+                        outputLines.push("3      Monitor         300              25");
+                    } else {
+                        let hints = [];
+                        if (!importsCorrect) hints.push("Import pandas as pd.");
+                        if (!dictCorrect) hints.push("Check your 'product_data' dictionary. Ensure keys are 'Product Name', 'Unit Price', 'Units In Stock' and values are correct lists.");
+                        if (!dfCorrect) hints.push("Ensure 'inventory_df' is created from 'product_data' using pd.DataFrame().");
+                        feedback.message = "Almost there. " + hints.join(" ");
+                    }
+                    return { ...feedback, output: outputLines.join('\n') };
+                }
+            },
+            {
+                id: 'pandas_df_selection_loc_iloc',
+                title: 'Pandas: DataFrame Selection (loc, iloc)',
+                topic: 'pandas',
+                explanation: `
+                    <p>Pandas provides several methods for selecting data from a DataFrame. Two primary ones are <code>.loc[]</code> and <code>.iloc[]</code>.</p>
+                    <p><strong><code>.loc[]</code> (Label-based selection):</strong> Accesses a group of rows and columns by labels or a boolean array.</p>
+                    <code class="code-block">import pandas as pd\ndata = {'col1': [1, 2, 3], 'col2': [4, 5, 6]}\ndf = pd.DataFrame(data, index=['a', 'b', 'c'])\n# df looks like:\n#       col1  col2\n#    a     1     4\n#    b     2     5\n#    c     3     6\n\n# Select row 'a': \ndf.loc['a'] \n# Output (Series):\n# col1    1\n# col2    4\n# Name: a, dtype: int64\n\n# Select rows 'a' and 'c': \ndf.loc[['a', 'c']]\n# Output (DataFrame):\n#   col1  col2\n# a    1     4\n# c    3     6\n\n# Select row 'b', column 'col2': \ndf.loc['b', 'col2'] \n# Output: 5\n\n# Select all rows, column 'col1': \ndf.loc[:, 'col1'] \n# Output (Series):\n# a    1\n# b    2\n# c    3\n# Name: col1, dtype: int64\n\n# Select rows where col1 > 1: \ndf.loc[df['col1'] > 1]\n# Output (DataFrame):\n#   col1  col2\n# b    2     5\n# c    3     6</code>
+                    <p><strong><code>.iloc[]</code> (Integer-location based selection):</strong> Accesses data by integer position (from 0 to length-1).</p>
+                     <code class="code-block"># Using the same df as above:\n# Select first row: \ndf.iloc[0] \n# Output (Series):\n# col1    1\n# col2    4\n# Name: a, dtype: int64\n\n# Select rows at index 0 and 2: \ndf.iloc[[0, 2]] \n# Output (DataFrame):\n#   col1  col2\n# a    1     4\n# c    3     6\n\n# Select element at row 1, column 1: \ndf.iloc[1, 1] \n# Output: 5\n\n# Select all rows, first column: \ndf.iloc[:, 0] \n# Output (Series):\n# a    1\n# b    2\n# c    3\n# Name: col1, dtype: int64\n\n# Select first 2 rows, first column: \ndf.iloc[0:2, 0] \n# Output (Series):\n# a    1\n# b    2\n# Name: col1, dtype: int64</code>
+                `,
+                exercise: `
+                    <p><strong>Your task:</strong></p>
+                    <p>Given the DataFrame <code>sales_df</code>:</p>
+                    <code class="code-block">import pandas as pd\nsales_data = {\n    'Month': ['Jan', 'Feb', 'Mar', 'Apr'],\n    'Sales': [150, 200, 180, 220],\n    'Expenses': [80, 90, 85, 100]\n}\nsales_df = pd.DataFrame(sales_data, index=['M1', 'M2', 'M3', 'M4'])\n# sales_df looks like:\n#       Month  Sales  Expenses\n#   M1   Jan    150        80\n#   M2   Feb    200        90\n#   M3   Mar    180        85\n#   M4   Apr    220       100</code>
+                    <ol>
+                        <li>Select the row with index label 'M2' using <code>.loc[]</code>. Store it in <code>row_m2_loc</code>.</li>
+                        <li>Select the 'Sales' for 'M3' using <code>.loc[]</code>. Store it in <code>sales_m3_loc</code>.</li>
+                        <li>Select all rows for the 'Month' and 'Sales' columns using <code>.loc[]</code>. Store it in <code>month_sales_loc</code>.</li>
+                        <li>Select the row at integer position 0 using <code>.iloc[]</code>. Store it in <code>row_0_iloc</code>.</li>
+                        <li>Select the data at row 2, column 1 (which is 180) using <code>.iloc[]</code>. Store it in <code>data_2_1_iloc</code>.</li>
+                        <li>Select the first two rows and all columns using <code>.iloc[]</code>. Store it in <code>first_two_rows_iloc</code>.</li>
+                    </ol>
+                `,
+                placeholderCode: `import pandas as pd\n\nsales_data = {\n    'Month': ['Jan', 'Feb', 'Mar', 'Apr'],\n    'Sales': [150, 200, 180, 220],\n    'Expenses': [80, 90, 85, 100]\n}\nsales_df = pd.DataFrame(sales_data, index=['M1', 'M2', 'M3', 'M4'])\n\n# 1. Select row 'M2' using .loc\nrow_m2_loc = sales_df.loc['M2']\n\n# 2. Select 'Sales' for 'M3' using .loc\nsales_m3_loc = sales_df.loc['M3', 'Sales']\n\n# 3. Select 'Month' and 'Sales' columns for all rows using .loc\nmonth_sales_loc = sales_df.loc[:, ['Month', 'Sales']]\n\n# 4. Select row at integer position 0 using .iloc\nrow_0_iloc = sales_df.iloc[0]\n\n# 5. Select data at row 2, column 1 using .iloc\ndata_2_1_iloc = sales_df.iloc[2, 1]\n\n# 6. Select first two rows, all columns using .iloc\nfirst_two_rows_iloc = sales_df.iloc[0:2]\n\n# Simulated print\n# print("row_m2_loc:\\n", row_m2_loc)\n# print("\\nsales_m3_loc:", sales_m3_loc)\n# print("\\nmonth_sales_loc:\\n", month_sales_loc)\n# print("\\nrow_0_iloc:\\n", row_0_iloc)\n# print("\\ndata_2_1_iloc:", data_2_1_iloc)\n# print("\\nfirst_two_rows_iloc:\\n", first_two_rows_iloc)`,
+                checkAnswer: function(userCode) {
+                    let feedback = { correct: false, message: "Keep working!" };
+                    let outputLines = [];
+
+                    const dfSetupCorrect = userCode.includes("sales_df = pd.DataFrame(sales_data, index=['M1', 'M2', 'M3', 'M4'])");
+
+                    const rowM2LocCorrect = /row_m2_loc\s*=\s*sales_df\.loc\s*\[\s*['"]M2['"]\s*\]/.test(userCode);
+                    const salesM3LocCorrect = /sales_m3_loc\s*=\s*sales_df\.loc\s*\[\s*['"]M3['"]\s*,\s*['"]Sales['"]\s*\]/.test(userCode);
+                    const monthSalesLocCorrect = /month_sales_loc\s*=\s*sales_df\.loc\s*\[\s*:\s*,\s*\[\s*['"]Month['"]\s*,\s*['"]Sales['"]\s*\]\s*\]/.test(userCode);
+                    
+                    const row0IlocCorrect = /row_0_iloc\s*=\s*sales_df\.iloc\s*\[\s*0\s*\]/.test(userCode);
+                    const data21IlocCorrect = /data_2_1_iloc\s*=\s*sales_df\.iloc\s*\[\s*2\s*,\s*1\s*\]/.test(userCode);
+                    const firstTwoRowsIlocCorrect = /first_two_rows_iloc\s*=\s*sales_df\.iloc\s*\[\s*0\s*:\s*2\s*(,\s*:\s*)?\]/.test(userCode);
+
+
+                    if (dfSetupCorrect && rowM2LocCorrect && salesM3LocCorrect && monthSalesLocCorrect && row0IlocCorrect && data21IlocCorrect && firstTwoRowsIlocCorrect) {
+                        feedback.correct = true;
+                        feedback.message = "Excellent! DataFrame selections with .loc and .iloc are correct.";
+                        outputLines.push("Simulated results based on your code:");
+                        outputLines.push("row_m2_loc:\nMonth       Feb\nSales       200\nExpenses     90\nName: M2, dtype: object");
+                        outputLines.push("\nsales_m3_loc: 180");
+                        outputLines.push("\nmonth_sales_loc:\n    Month  Sales\nM1   Jan    150\nM2   Feb    200\nM3   Mar    180\nM4   Apr    220");
+                        outputLines.push("\nrow_0_iloc:\nMonth        Jan\nSales        150\nExpenses      80\nName: M1, dtype: object");
+                        outputLines.push("\ndata_2_1_iloc: 180");
+                        outputLines.push("\nfirst_two_rows_iloc:\n    Month  Sales  Expenses\nM1   Jan    150        80\nM2   Feb    200        90");
+                    } else {
+                        let hints = [];
+                        if (!dfSetupCorrect) hints.push("Ensure the initial sales_df DataFrame is set up correctly.");
+                        if (!rowM2LocCorrect) hints.push("Check row_m2_loc: sales_df.loc['M2'].");
+                        if (!salesM3LocCorrect) hints.push("Check sales_m3_loc: sales_df.loc['M3', 'Sales'].");
+                        if (!monthSalesLocCorrect) hints.push("Check month_sales_loc: sales_df.loc[:, ['Month', 'Sales']].");
+                        if (!row0IlocCorrect) hints.push("Check row_0_iloc: sales_df.iloc[0].");
+                        if (!data21IlocCorrect) hints.push("Check data_2_1_iloc: sales_df.iloc[2, 1].");
+                        if (!firstTwoRowsIlocCorrect) hints.push("Check first_two_rows_iloc: sales_df.iloc[0:2] or sales_df.iloc[0:2, :].");
+                        feedback.message = "Some selections are not quite right. " + hints.join(" ");
+                    }
+                    return { ...feedback, output: outputLines.join('\n') };
+                }
+            },
+            {
+                id: 'pandas_df_operations',
+                title: 'Pandas: DataFrame Basic Operations',
+                topic: 'pandas',
+                explanation: `
+                    <p>You can perform various operations on DataFrames, such as adding or removing columns, and filtering rows.</p>
+                    <p><strong>Adding a new column:</strong></p>
+                    <code class="code-block">import pandas as pd\ndata = {'A': [1, 2, 3], 'B': [4, 5, 6]}\ndf = pd.DataFrame(data)\n# Add a new column 'C' by calculation\ndf['C'] = df['A'] + df['B']\n# df is now:\n#    A  B  C\n# 0  1  4  5\n# 1  2  5  7\n# 2  3  6  9\n\n# Add a new column with a scalar value\ndf['D'] = 10\n# df is now:\n#    A  B  C   D\n# 0  1  4  5  10\n# 1  2  5  7  10\n# 2  3  6  9  10</code>
+                    <p><strong>Removing columns:</strong> Use <code>df.drop()</code>.</p>
+                    <code class="code-block"># Remove column 'D'\ndf_dropped_D = df.drop('D', axis=1) # axis=1 specifies column\n# To modify df in place: df.drop('D', axis=1, inplace=True)\n# df_dropped_D is:\n#    A  B  C\n# 0  1  4  5\n# 1  2  5  7\n# 2  3  6  9</code>
+                    <p><strong>Filtering rows based on column values (similar to boolean indexing in NumPy):</strong></p>
+                    <code class="code-block"># Filter rows where column 'A' is greater than 1\nfiltered_df = df[df['A'] > 1]\n# filtered_df is:\n#    A  B  C   D\n# 1  2  5  7  10\n# 2  3  6  9  10</code>
+                `,
+                exercise: `
+                    <p><strong>Your task:</strong></p>
+                    <p>Given the DataFrame <code>product_df</code>:</p>
+                    <code class="code-block">import pandas as pd\nimport numpy as np # For NaN\nproduct_info = {\n    'Product': ['Apple', 'Banana', 'Cherry'],\n    'Price': [0.5, 0.25, 0.75],\n    'Quantity': [100, 150, np.nan] # Cherry has a missing quantity\n}\nproduct_df = pd.DataFrame(product_info)</code>
+                    <ol>
+                        <li>Calculate the 'Total Value' for each product (Price * Quantity). Store this in a new column named <code>'Total Value'</code> in <code>product_df</code>.</li>
+                        <li>Create a new column named <code>'On Sale'</code> and set all its values to <code>False</code>.</li>
+                        <li>Filter <code>product_df</code> to get only products where 'Price' is less than 0.6. Store it in <code>cheap_products_df</code>.</li>
+                        <li>Create a new DataFrame <code>product_df_no_sale</code> by dropping the 'On Sale' column from <code>product_df</code>. (Do not modify <code>product_df</code> in place).</li>
+                    </ol>
+                `,
+                placeholderCode: `import pandas as pd\nimport numpy as np\n\nproduct_info = {\n    'Product': ['Apple', 'Banana', 'Cherry'],\n    'Price': [0.5, 0.25, 0.75],\n    'Quantity': [100, 150, np.nan]\n}\nproduct_df = pd.DataFrame(product_info)\n\n# 1. Calculate 'Total Value'\n\n\n# 2. Add 'On Sale' column\n\n\n# 3. Filter for cheap products\n\n\n# 4. Drop 'On Sale' column\n\n\n# Simulated print\n# print("Original product_df:\\n", product_df)\n# print("\\nCheap products:\\n", cheap_products_df)\n# print("\\nproduct_df_no_sale:\\n", product_df_no_sale)`,
+                checkAnswer: function(userCode) {
+                    let feedback = { correct: false, message: "Keep working on it." };
+                    let outputLines = [];
+
+                    const dfSetupCorrect = userCode.includes("product_df = pd.DataFrame(product_info)");
+                    const totalValueCorrect = /product_df\s*\[\s*['"]Total Value['"]\s*\]\s*=\s*product_df\s*\[\s*['"]Price['"]\s*\]\s*\*\s*product_df\s*\[\s*['"]Quantity['"]\s*\]/.test(userCode);
+                    const onSaleCorrect = /product_df\s*\[\s*['"]On Sale['"]\s*\]\s*=\s*False/.test(userCode);
+                    const cheapProductsCorrect = /cheap_products_df\s*=\s*product_df\s*\[\s*product_df\s*\[\s*['"]Price['"]\s*\]\s*<\s*0.6\s*\]/.test(userCode);
+                    const dropCorrect = /product_df_no_sale\s*=\s*product_df\.drop\(\s*['"]On Sale['"]\s*,\s*axis\s*=\s*1\s*\)/.test(userCode);
+                    
+                    if (dfSetupCorrect && totalValueCorrect && onSaleCorrect && cheapProductsCorrect && dropCorrect) {
+                        feedback.correct = true;
+                        feedback.message = "Excellent! DataFrame operations performed correctly.";
+                        outputLines.push("Simulated 'product_df' after operations (before drop for no_sale):");
+                        outputLines.push("  Product  Price  Quantity  Total Value  On Sale");
+                        outputLines.push("0   Apple   0.50     100.0         50.0    False");
+                        outputLines.push("1  Banana   0.25     150.0         37.5    False");
+                        outputLines.push("2  Cherry   0.75       NaN          NaN    False");
+                        outputLines.push("\nSimulated 'cheap_products_df':");
+                        outputLines.push("  Product  Price  Quantity  Total Value  On Sale");
+                        outputLines.push("0   Apple   0.50     100.0         50.0    False");
+                        outputLines.push("1  Banana   0.25     150.0         37.5    False");
+                        outputLines.push("\nSimulated 'product_df_no_sale':");
+                        outputLines.push("  Product  Price  Quantity  Total Value");
+                        outputLines.push("0   Apple   0.50     100.0         50.0");
+                        outputLines.push("1  Banana   0.25     150.0         37.5");
+                        outputLines.push("2  Cherry   0.75       NaN          NaN");
+
+                    } else {
+                        let hints = [];
+                        if (!dfSetupCorrect) hints.push("Ensure product_df is set up.");
+                        if (!totalValueCorrect) hints.push("Check 'Total Value' calculation: df['Price'] * df['Quantity'].");
+                        if (!onSaleCorrect) hints.push("Check 'On Sale' column assignment: df['On Sale'] = False.");
+                        if (!cheapProductsCorrect) hints.push("Check 'cheap_products_df' filter: df[df['Price'] < 0.6].");
+                        if (!dropCorrect) hints.push("Check 'product_df_no_sale': df.drop('On Sale', axis=1).");
+                        feedback.message = "Some operations are not quite right. " + hints.join(" ");
+                    }
+                    return { ...feedback, output: outputLines.join('\n') };
+                }
+            },
+            {
+                id: 'pandas_missing_data',
+                title: 'Pandas: Handling Missing Data',
+                topic: 'pandas',
+                explanation: `
+                    <p>Real-world data often contains missing values, represented in Pandas as <code>NaN</code> (Not a Number).</p>
+                    <p><strong>Checking for missing values:</strong> <code>.isnull()</code> or <code>.isna()</code> returns a boolean DataFrame.</p>
+                    <code class="code-block">import pandas as pd\nimport numpy as np\ndata = {'A': [1, 2, np.nan], 'B': [np.nan, 5, 6]}\ndf = pd.DataFrame(data)\n# df is:\n#      A    B\n# 0  1.0  NaN\n# 1  2.0  5.0\n# 2  NaN  6.0\n\n# Check for nulls\n# df.isnull()\n# Output:\n#        A      B\n# 0  False   True\n# 1  False  False\n# 2   True  False\n\n# Count nulls per column\n# df.isnull().sum()\n# Output:\n# A    1\n# B    1\n# dtype: int64</code>
+                    <p><strong>Dropping missing values:</strong> <code>.dropna()</code></p>
+                    <code class="code-block"># Drop rows with any NaN values\n# df.dropna() \n# Output:\n#      A    B\n# 1  2.0  5.0\n\n# Drop columns with any NaN values\n# df.dropna(axis=1)\n# Output: (Empty DataFrame in this case as both columns have a NaN)</code>
+                    <p><strong>Filling missing values:</strong> <code>.fillna()</code></p>
+                    <code class="code-block"># Fill NaNs with 0\n# df.fillna(0)\n# Output:\n#      A    B\n# 0  1.0  0.0\n# 1  2.0  5.0\n# 2  0.0  6.0\n\n# Fill NaNs in column 'A' with its mean\n# df['A'].fillna(df['A'].mean(), inplace=True) # inplace modifies df directly</code>
+                `,
+                exercise: `
+                    <p><strong>Your task:</strong></p>
+                    <p>Given the DataFrame <code>employee_df</code>:</p>
+                    <code class="code-block">import pandas as pd\nimport numpy as np\nemployee_data = {\n    'Name': ['Alice', 'Bob', 'Charlie', 'David'],\n    'Department': ['HR', 'Engineering', np.nan, 'HR'],\n    'Salary': [70000, 80000, 75000, np.nan],\n    'Years': [5, np.nan, 3, 4]\n}\nemployee_df = pd.DataFrame(employee_data)</code>
+                    <ol>
+                        <li>Check how many missing values are in each column of <code>employee_df</code>. Store the result (a Series) in <code>missing_counts</code>.</li>
+                        <li>Create a new DataFrame <code>employee_df_cleaned_rows</code> by dropping all rows from <code>employee_df</code> that contain any missing values.</li>
+                        <li>Create a new DataFrame <code>employee_df_filled</code> where all missing 'Salary' values in <code>employee_df</code> are filled with the average salary of the available salaries, and missing 'Department' values are filled with 'Unknown'. Missing 'Years' should be filled with 0. (Hint: fill column by column or use a dictionary with fillna).</li>
+                    </ol>
+                `,
+                placeholderCode: `import pandas as pd\nimport numpy as np\n\nemployee_data = {\n    'Name': ['Alice', 'Bob', 'Charlie', 'David'],\n    'Department': ['HR', 'Engineering', np.nan, 'HR'],\n    'Salary': [70000, 80000, 75000, np.nan],\n    'Years': [5, np.nan, 3, 4]\n}\nemployee_df = pd.DataFrame(employee_data)\n\n# 1. Count missing values per column\n\n\n# 2. Drop rows with any missing values\n\n\n# 3. Fill missing values\n# First, make a copy to avoid modifying the original for subsequent steps if needed\nemployee_df_filled = employee_df.copy()\n# Fill 'Salary'\n\n# Fill 'Department'\n\n# Fill 'Years'\n\n\n# Simulated print\n# print("Missing counts:\\n", missing_counts)\n# print("\\nCleaned (rows dropped) df:\\n", employee_df_cleaned_rows)\n# print("\\nFilled df:\\n", employee_df_filled)`,
+                checkAnswer: function(userCode) {
+                    let feedback = { correct: false, message: "Review your approach." };
+                    let outputLines = [];
+                    const dfSetupCorrect = userCode.includes("employee_df = pd.DataFrame(employee_data)");
+                    const missingCountsCorrect = /missing_counts\s*=\s*employee_df\.isnull\(\)\.sum\(\)/.test(userCode);
+                    const cleanedRowsCorrect = /employee_df_cleaned_rows\s*=\s*employee_df\.dropna\(\)/.test(userCode);
+                    
+                    // For fillna, check for individual or dictionary-based filling
+                    const fillSalaryCorrect = /employee_df_filled\s*\[\s*['"]Salary['"]\s*\]\s*=\s*employee_df_filled\s*\[\s*['"]Salary['"]\s*\]\.fillna\(\s*employee_df\s*\[\s*['"]Salary['"]\s*\]\.mean\(\s*\)\s*\)/.test(userCode) ||
+                                              /employee_df_filled\s*\[\s*['"]Salary['"]\s*\]\.fillna\(\s*employee_df\s*\[\s*['"]Salary['"]\s*\]\.mean\(\s*\)\s*,\s*inplace=True\s*\)/.test(userCode);
+                    const fillDeptCorrect = /employee_df_filled\s*\[\s*['"]Department['"]\s*\]\s*=\s*employee_df_filled\s*\[\s*['"]Department['"]\s*\]\.fillna\(\s*['"]Unknown['"]\s*\)/.test(userCode) ||
+                                            /employee_df_filled\s*\[\s*['"]Department['"]\s*\]\.fillna\(\s*['"]Unknown['"]\s*,\s*inplace=True\s*\)/.test(userCode);
+                    const fillYearsCorrect = /employee_df_filled\s*\[\s*['"]Years['"]\s*\]\s*=\s*employee_df_filled\s*\[\s*['"]Years['"]\s*\]\.fillna\(\s*0\s*\)/.test(userCode) ||
+                                             /employee_df_filled\s*\[\s*['"]Years['"]\s*\]\.fillna\(\s*0\s*,\s*inplace=True\s*\)/.test(userCode);
+                    
+                    // Check for dictionary based fillna
+                    const dictFillCorrect = /employee_df_filled\s*=\s*employee_df\.fillna\(\s*\{\s*['"]Salary['"]\s*:\s*employee_df\s*\[\s*['"]Salary['"]\s*\]\.mean\(\s*\)\s*,\s*['"]Department['"]\s*:\s*['"]Unknown['"]\s*,\s*['"]Years['"]\s*:\s*0\s*\}\s*\)/.test(userCode.replace(/\s+/g, ' '));
+
+
+                    if (dfSetupCorrect && missingCountsCorrect && cleanedRowsCorrect && ( (fillSalaryCorrect && fillDeptCorrect && fillYearsCorrect) || dictFillCorrect) ) {
+                        feedback.correct = true;
+                        feedback.message = "Well done! Missing data handled correctly.";
+                        outputLines.push("Simulated 'missing_counts':");
+                        outputLines.push("Name          0\nDepartment    1\nSalary        1\nYears         1\ndtype: int64");
+                        outputLines.push("\nSimulated 'employee_df_cleaned_rows':");
+                        outputLines.push("    Name Department   Salary  Years");
+                        outputLines.push("0  Alice         HR  70000.0    5.0");
+                        outputLines.push("\nSimulated 'employee_df_filled':");
+                        outputLines.push("      Name   Department        Salary  Years");
+                        outputLines.push("0    Alice           HR  70000.000000    5.0");
+                        outputLines.push("1      Bob  Engineering  80000.000000    0.0"); // Years filled with 0
+                        outputLines.push("2  Charlie      Unknown  75000.000000    3.0"); // Dept filled with Unknown
+                        outputLines.push("3    David           HR  75000.000000    4.0"); // Salary filled with mean of (70k, 80k, 75k) = 75k
+                    } else {
+                        let hints = [];
+                        if (!dfSetupCorrect) hints.push("Ensure employee_df is set up.");
+                        if (!missingCountsCorrect) hints.push("Check 'missing_counts': df.isnull().sum().");
+                        if (!cleanedRowsCorrect) hints.push("Check 'employee_df_cleaned_rows': df.dropna().");
+                        if (!((fillSalaryCorrect && fillDeptCorrect && fillYearsCorrect) || dictFillCorrect)) {
+                             hints.push("Check 'employee_df_filled': Fill 'Salary' with mean, 'Department' with 'Unknown', 'Years' with 0. You can do this column by column or with a dictionary in fillna(). Ensure you're using employee_df_filled for assignments or employee_df.copy() if modifying in place on a copy.");
+                        }
+                        feedback.message = "Some parts are incorrect. " + hints.join(" ");
+                    }
+                    return { ...feedback, output: outputLines.join('\n') };
+                }
+            },
+            {
+                id: 'pandas_groupby',
+                title: 'Pandas: GroupBy Operations',
+                topic: 'pandas',
+                explanation: `
+                    <p>The <code>groupby</code> operation involves splitting the data into groups based on some criteria, applying a function to each group independently, and then combining the results into a data structure.</p>
+                    <code class="code-block">import pandas as pd\ndata = {\n    'Team': ['A', 'B', 'A', 'B', 'A', 'C'],\n    'Player': ['P1', 'P2', 'P3', 'P4', 'P5', 'P6'],\n    'Score': [10, 15, 12, 18, 11, 9],\n    'Assists': [5, 7, 6, 8, 5, 4]\n}\ndf = pd.DataFrame(data)\n\n# Group by 'Team'\ngrouped_by_team = df.groupby('Team')\n\n# Calculate sum of 'Score' for each team\n# grouped_by_team['Score'].sum()\n# Output:\n# Team\n# A    33\n# B    33\n# C     9\n# Name: Score, dtype: int64\n\n# Calculate mean of 'Score' and 'Assists' for each team\n# grouped_by_team[['Score', 'Assists']].mean()\n# Output:\n#       Score  Assists\n# Team                \n# A     11.00      5.333333\n# B     16.50      7.500000\n# C      9.00      4.000000\n\n# Get the size of each group\n# grouped_by_team.size()\n# Output:\n# Team\n# A    3\n# B    2\n# C    1\n# dtype: int64</code>
+                    <p>You can also use <code>.agg()</code> for multiple aggregation functions.</p>
+                    <code class="code-block"># Multiple aggregations on 'Score'\n# grouped_by_team['Score'].agg(['sum', 'mean', 'count'])\n# Output:\n#       sum  mean  count\n# Team                   \n# A      33  11.0      3\n# B      33  16.5      2\n# C       9   9.0      1</code>
+                `,
+                exercise: `
+                    <p><strong>Your task:</strong></p>
+                    <p>Given the DataFrame <code>sales_records_df</code>:</p>
+                    <code class="code-block">import pandas as pd\nsales_data = {\n    'Region': ['North', 'South', 'North', 'South', 'East', 'North', 'East'],\n    'Product': ['A', 'A', 'B', 'B', 'A', 'B', 'C'],\n    'Sales': [100, 150, 80, 120, 200, 90, 50],\n    'Quantity': [10, 12, 8, 10, 15, 9, 5]\n}\nsales_records_df = pd.DataFrame(sales_data)</code>
+                    <ol>
+                        <li>Group <code>sales_records_df</code> by 'Region'. Store the grouped object in <code>grouped_by_region</code>.</li>
+                        <li>Calculate the total 'Sales' for each region from <code>grouped_by_region</code>. Store this Series in <code>total_sales_by_region</code>.</li>
+                        <li>Calculate the average 'Quantity' sold for each region. Store this in <code>avg_quantity_by_region</code>.</li>
+                        <li>Group <code>sales_records_df</code> by both 'Region' and 'Product'.</li>
+                        <li>Calculate the sum of 'Sales' and the mean of 'Quantity' for these combined groups. Store the resulting DataFrame in <code>sales_summary_by_region_product</code>. (Hint: use <code>.agg()</code>)</li>
+                    </ol>
+                `,
+                placeholderCode: `import pandas as pd\n\nsales_data = {\n    'Region': ['North', 'South', 'North', 'South', 'East', 'North', 'East'],\n    'Product': ['A', 'A', 'B', 'B', 'A', 'B', 'C'],\n    'Sales': [100, 150, 80, 120, 200, 90, 50],\n    'Quantity': [10, 12, 8, 10, 15, 9, 5]\n}\nsales_records_df = pd.DataFrame(sales_data)\n\n# 1. Group by 'Region'\n\n\n# 2. Total 'Sales' by region\n\n\n# 3. Average 'Quantity' by region\n\n\n# 4. Group by 'Region' and 'Product'\ngrouped_region_product = sales_records_df.groupby(['Region', 'Product'])\n\n# 5. Sum of 'Sales' and mean of 'Quantity' for combined groups\n\n\n# Simulated print\n# print("Total Sales by Region:\\n", total_sales_by_region)\n# print("\\nAverage Quantity by Region:\\n", avg_quantity_by_region)\n# print("\\nSales Summary by Region & Product:\\n", sales_summary_by_region_product)`,
+                checkAnswer: function(userCode) {
+                    let feedback = { correct: false, message: "Review your groupby logic." };
+                    let outputLines = [];
+
+                    const dfSetupCorrect = userCode.includes("sales_records_df = pd.DataFrame(sales_data)");
+                    const groupByRegionCorrect = /grouped_by_region\s*=\s*sales_records_df\.groupby\(\s*['"]Region['"]\s*\)/.test(userCode);
+                    const totalSalesCorrect = /total_sales_by_region\s*=\s*grouped_by_region\s*\[\s*['"]Sales['"]\s*\]\.sum\(\)/.test(userCode) ||
+                                              /total_sales_by_region\s*=\s*sales_records_df\.groupby\(\s*['"]Region['"]\s*\)\s*\[\s*['"]Sales['"]\s*\]\.sum\(\)/.test(userCode);
+                    const avgQtyCorrect = /avg_quantity_by_region\s*=\s*grouped_by_region\s*\[\s*['"]Quantity['"]\s*\]\.mean\(\)/.test(userCode) ||
+                                          /avg_quantity_by_region\s*=\s*sales_records_df\.groupby\(\s*['"]Region['"]\s*\)\s*\[\s*['"]Quantity['"]\s*\]\.mean\(\)/.test(userCode);
+                    
+                    const groupedRegionProductCorrect = /grouped_region_product\s*=\s*sales_records_df\.groupby\(\s*\[\s*['"]Region['"]\s*,\s*['"]Product['"]\s*\]\s*\)/.test(userCode.replace(/\s+/g, ' '));
+                    const aggCorrect = /sales_summary_by_region_product\s*=\s*grouped_region_product\.agg\(\s*\{\s*['"]Sales['"]\s*:\s*['"]sum['"]\s*,\s*['"]Quantity['"]\s*:\s*['"]mean['"]\s*\}\s*\)/.test(userCode.replace(/\s+/g, ' ')) ||
+                                       /sales_summary_by_region_product\s*=\s*sales_records_df\.groupby\(\s*\[\s*['"]Region['"]\s*,\s*['"]Product['"]\s*\]\s*\)\.agg\(\s*\{\s*['"]Sales['"]\s*:\s*['"]sum['"]\s*,\s*['"]Quantity['"]\s*:\s*['"]mean['"]\s*\}\s*\)/.test(userCode.replace(/\s+/g, ' '));
+
+
+                    if (dfSetupCorrect && groupByRegionCorrect && totalSalesCorrect && avgQtyCorrect && groupedRegionProductCorrect && aggCorrect) {
+                        feedback.correct = true;
+                        feedback.message = "Fantastic! GroupBy operations are correct.";
+                        outputLines.push("Simulated 'total_sales_by_region':");
+                        outputLines.push("Region\nEast     250\nNorth    270\nSouth    270\nName: Sales, dtype: int64");
+                        outputLines.push("\nSimulated 'avg_quantity_by_region':");
+                        outputLines.push("Region\nEast     10.0\nNorth     9.0\nSouth    11.0\nName: Quantity, dtype: float64");
+                        outputLines.push("\nSimulated 'sales_summary_by_region_product':");
+                        outputLines.push("                 Sales  Quantity");
+                        outputLines.push("Region Product                  ");
+                        outputLines.push("East   A           200      15.0");
+                        outputLines.push("       C            50       5.0");
+                        outputLines.push("North  A           100      10.0");
+                        outputLines.push("       B           170       8.5"); // 80+90=170, (8+9)/2 = 8.5
+                        outputLines.push("South  A           150      12.0");
+                        outputLines.push("       B           120      10.0");
+                    } else {
+                        let hints = [];
+                        if (!dfSetupCorrect) hints.push("Ensure sales_records_df is set up.");
+                        if (!groupByRegionCorrect) hints.push("Check 'grouped_by_region': df.groupby('Region').");
+                        if (!totalSalesCorrect) hints.push("Check 'total_sales_by_region': grouped_by_region['Sales'].sum().");
+                        if (!avgQtyCorrect) hints.push("Check 'avg_quantity_by_region': grouped_by_region['Quantity'].mean().");
+                        if (!groupedRegionProductCorrect) hints.push("Check 'grouped_region_product': df.groupby(['Region', 'Product']).");
+                        if (!aggCorrect) hints.push("Check 'sales_summary_by_region_product': grouped_obj.agg({'Sales': 'sum', 'Quantity': 'mean'}).");
+                        feedback.message = "One or more GroupBy operations need adjustment. " + hints.join(" ");
+                    }
+                    return { ...feedback, output: outputLines.join('\n') };
+                }
+            }
+        ];
+
+        let currentLessonIndex = 0;
+
+        const lessonTitleEl = document.getElementById('lesson-title');
+        const lessonExplanationEl = document.getElementById('lesson-explanation');
+        const lessonExerciseEl = document.getElementById('lesson-exercise');
+        const codeEditorEl = document.getElementById('code-editor');
+        const runCodeBtn = document.getElementById('run-code-btn');
+        const explainCodeBtn = document.getElementById('explain-code-btn');
+        const loadingIndicatorEl = document.getElementById('loading-indicator');
+        const feedbackMessageEl = document.getElementById('feedback-message');
+        const simulatedOutputEl = document.getElementById('simulated-output');
+        const aiExplanationAreaEl = document.getElementById('ai-explanation-area');
+        const aiExplanationOutputEl = document.getElementById('ai-explanation-output');
+        const prevLessonBtn = document.getElementById('prev-lesson-btn');
+        const nextLessonBtn = document.getElementById('next-lesson-btn');
+        const numpyLessonsListEl = document.getElementById('numpy-lessons-list');
+        const pandasLessonsListEl = document.getElementById('pandas-lessons-list');
+
+        function loadLesson(index) {
+            if (index < 0 || index >= lessons.length) return;
+            currentLessonIndex = index;
+            const lesson = lessons[index];
+
+            lessonTitleEl.textContent = lesson.title;
+            lessonExplanationEl.innerHTML = lesson.explanation;
+            lessonExerciseEl.innerHTML = lesson.exercise;
+            codeEditorEl.value = lesson.placeholderCode || '';
+            
+            // Clear previous outputs
+            feedbackMessageEl.textContent = 'Run your code to see feedback.';
+            feedbackMessageEl.className = 'text-sm whitespace-pre-wrap';
+            simulatedOutputEl.textContent = '';
+            simulatedOutputEl.classList.add('hidden');
+            aiExplanationOutputEl.textContent = '';
+            aiExplanationAreaEl.classList.add('hidden');
+
+            updateNavigationButtons();
+            updateLessonListActiveState();
+        }
+
+        function updateNavigationButtons() {
+            prevLessonBtn.disabled = currentLessonIndex === 0;
+            nextLessonBtn.disabled = currentLessonIndex === lessons.length - 1;
+        }
+        
+        function updateLessonListActiveState() {
+            document.querySelectorAll('#numpy-lessons-list li, #pandas-lessons-list li').forEach(li => {
+                li.classList.remove('bg-sky-100', 'font-semibold');
+                li.classList.add('hover:bg-gray-100'); // Ensure hover effect is re-added
+            });
+            const activeLessonElement = document.querySelector(`li[data-lesson-id="${lessons[currentLessonIndex].id}"]`);
+            if (activeLessonElement) {
+                activeLessonElement.classList.add('bg-sky-100', 'font-semibold');
+                activeLessonElement.classList.remove('hover:bg-gray-100'); // Remove hover for active
+            }
+        }
+
+        function populateLessonLists() {
+            // Clear existing list items before repopulating
+            numpyLessonsListEl.innerHTML = '';
+            pandasLessonsListEl.innerHTML = '';
+
+            lessons.forEach((lesson, index) => {
+                const listItem = document.createElement('li');
+                listItem.textContent = lesson.title.split(': ')[1] || lesson.title; // Get text after colon for brevity
+                listItem.className = 'p-2 rounded-md cursor-pointer hover:bg-gray-200 transition-colors duration-150 text-sm';
+                listItem.setAttribute('data-lesson-id', lesson.id);
+                listItem.addEventListener('click', () => loadLesson(index));
+                
+                if (lesson.topic === 'numpy') {
+                    numpyLessonsListEl.appendChild(listItem);
+                } else if (lesson.topic === 'pandas') {
+                    pandasLessonsListEl.appendChild(listItem);
+                }
+            });
+        }
+
+        runCodeBtn.addEventListener('click', () => {
+            const userCode = codeEditorEl.value;
+            const lesson = lessons[currentLessonIndex];
+            // Clear AI explanation when checking answer
+            aiExplanationOutputEl.textContent = '';
+            aiExplanationAreaEl.classList.add('hidden');
+
+            if (lesson.checkAnswer) {
+                const result = lesson.checkAnswer(userCode);
+                feedbackMessageEl.textContent = result.message;
+                if (result.correct) {
+                    feedbackMessageEl.className = 'text-sm whitespace-pre-wrap feedback-correct';
+                } else {
+                    feedbackMessageEl.className = 'text-sm whitespace-pre-wrap feedback-incorrect';
+                }
+
+                if (result.output && result.output.trim() !== "") {
+                    simulatedOutputEl.textContent = result.output;
+                    simulatedOutputEl.classList.remove('hidden');
+                } else {
+                    simulatedOutputEl.textContent = '';
+                    simulatedOutputEl.classList.add('hidden');
+                }
+            }
+        });
+
+        prevLessonBtn.addEventListener('click', () => {
+            if (currentLessonIndex > 0) {
+                loadLesson(currentLessonIndex - 1);
+            }
+        });
+
+        nextLessonBtn.addEventListener('click', () => {
+            if (currentLessonIndex < lessons.length - 1) {
+                loadLesson(currentLessonIndex + 1);
+            }
+        });
+
+        // --- Gemini API Integration ---
+        const API_KEY = ""; // Left empty as per instructions, Canvas will provide it.
+        const GENERATIVE_MODEL_NAME = "gemini-2.0-flash";
+
+        explainCodeBtn.addEventListener('click', async () => {
+            const userCode = codeEditorEl.value.trim();
+            if (!userCode) {
+                aiExplanationOutputEl.textContent = "Please write some code in the editor first.";
+                aiExplanationAreaEl.classList.remove('hidden');
+                return;
+            }
+
+            loadingIndicatorEl.classList.remove('hidden');
+            explainCodeBtn.disabled = true;
+            aiExplanationOutputEl.textContent = ""; // Clear previous explanation
+            aiExplanationAreaEl.classList.add('hidden'); // Hide until content ready
+
+            const prompt = `Explain the following Python code, which might use NumPy and/or Pandas. Focus on what each part of the code does and the relevant library concepts for a beginner. Keep the explanation concise and easy to understand.\n\nPython Code:\n\`\`\`python\n${userCode}\n\`\`\``;
+
+            let chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
+            const payload = { contents: chatHistory };
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${GENERATIVE_MODEL_NAME}:generateContent?key=${API_KEY}`;
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    const errorBody = await response.json();
+                    console.error("API Error Response:", errorBody);
+                    throw new Error(`API request failed with status ${response.status}: ${errorBody?.error?.message || response.statusText}`);
+                }
+
+                const result = await response.json();
+
+                if (result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    const explanationText = result.candidates[0].content.parts[0].text;
+                    aiExplanationOutputEl.textContent = explanationText;
+                    aiExplanationAreaEl.classList.remove('hidden');
+                } else {
+                    console.error("Unexpected API response structure:", result);
+                    aiExplanationOutputEl.textContent = "Could not get an explanation. The API response was not in the expected format.";
+                    aiExplanationAreaEl.classList.remove('hidden');
+                }
+            } catch (error) {
+                console.error('Error calling Gemini API:', error);
+                aiExplanationOutputEl.textContent = `Error: Could not fetch explanation. ${error.message}. Check the console for more details.`;
+                aiExplanationAreaEl.classList.remove('hidden');
+            } finally {
+                loadingIndicatorEl.classList.add('hidden');
+                explainCodeBtn.disabled = false;
+            }
+        });
+
+
+        // Initialize
+        populateLessonLists(); 
+        if (lessons.length > 0) {
+            loadLesson(0);
+        } else {
+            lessonTitleEl.textContent = "No Lessons Available";
+            lessonExplanationEl.innerHTML = "<p>It seems there are no lessons loaded. Please check the configuration.</p>";
+            lessonExerciseEl.innerHTML = "";
+            runCodeBtn.disabled = true;
+            explainCodeBtn.disabled = true;
+            prevLessonBtn.disabled = true;
+            nextLessonBtn.disabled = true;
+        }
+
+    </script>
+</body>
+</html>
