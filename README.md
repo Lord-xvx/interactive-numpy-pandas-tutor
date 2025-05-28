@@ -7,6 +7,7 @@ An interactive, hands-on learning experience for mastering NumPy and Pandas - tw
 This interactive NumPy & Pandas tutor was created with the help of Google Gemini AI.
 If you enjoy using it or have ideas for improvement, please contribute!
 I especially encourage the community to add more lessons and interactive exercises to help others learn.
+https://g.co/gemini/share/1c31c436c83c
 
 🌟 Features
 
